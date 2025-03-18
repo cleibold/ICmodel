@@ -24,7 +24,7 @@ Ncells=len(itd_list)
 bins0=np.arange(len(itd_list)+1)
 
 pshifts=2**np.arange(3,11)
-save_flag=True
+save_flag=False
 if save_flag==True:
     patterns={}
     iclist={}
@@ -43,17 +43,19 @@ if save_flag==True:
 
         patterns[pshift]=np.array(patterns[pshift])
         iclist[pshift]=np.array(iclist[pshift])
-
-    #with open('fwarp.pkl','wb') as fd:
-    #    pickle.dump(patterns,fd)
+    
+    with open('pkl/fwarp.pkl','wb') as fd:
+        sv_str={'patt':patterns,'iclist':iclist}
+        pickle.dump(sv_str,fd)
 else:
-    with open('fwarp.pkl','rb') as fd:
-        patterns=pickle.load(fd)
-
+    with open('pkl/fwarp.pkl','rb') as fd:
+        sv_str=pickle.load(fd)
+        patterns=sv_str['patt']
+        iclist=sv_str['iclist']
 
 Navg=2001
 colphase=colormaps['rainbow']((np.arange(9))/8)
-fig=plt.figure()
+fig=plt.figure(figsize=(8.5,4))
 ax=fig.add_subplot(2,3,1)
 
 patt=iclist[8]
@@ -68,13 +70,13 @@ for row in range(patt.shape[0]):
 patt=patt/np.max(patt)    
 dur=patt.shape[1]/fs
 
-ax.imshow(patt, extent=[0, dur, itd_list[-1], itd_list[0] ], cmap='inferno', vmin=0, vmax=1, aspect=dur/ITDmax)
+ax.imshow(patt.T, extent=[itd_list[-1], itd_list[0], 0, dur ], cmap='inferno', vmin=0, vmax=1, aspect=ITDmax/dur)
 ax.invert_yaxis()
-ax.set_xlim([0, dur])
-ax.set_xticks([0, 0.5, 1])
-ax.set_yticks([0, 0.3, .6])
-ax.set_ylabel('ITD (ms)')
-ax.set_xlabel('Time s')
+ax.set_ylim([0, dur])
+ax.set_yticks([0, 0.5, 1])
+ax.set_xticks([0, 0.3, .6])
+ax.set_xlabel('Target ITD (ms)')
+ax.set_ylabel('Time s')
 ax.set_title('Phase warp 8 Hz', fontsize=10)
 
 
@@ -92,7 +94,7 @@ ax.set_xlim([0, ITDmax])
 ax.set_xticks([0, 0.3, .6])
 #ax.set_ylim([0,1.5])
 ax.set_yticks([0.5,1.0,1.5])
-ax.set_xlabel('ITD (ms)')
+ax.set_xlabel('Target ITD (ms)')
 ax.set_ylabel('BF (kHz)')
 
 ax=fig.add_subplot(2,3,3)
@@ -103,14 +105,16 @@ for m,pkey in enumerate(patterns.keys()):
     
     vs=np.abs(np.sum(tsig*phasemat, axis=1))/np.sum(tsig,axis=1)
     print(pkey,np.mean(vs))
-    ax.plot(itd_list,vs,'-',color=colphase[1+m])
+    ax.plot(itd_list,vs,'-',color=colphase[1+m], label=str(pkey))
 
 ax.set_xticks([0,.3,.6])
 ax.set_xlabel('ITD (ms)')
 ax.set_ylabel('VS')
+ax.text(0.8,0.6,'f$_{warp}$ (Hz)')
+ax.legend(frameon=False, bbox_to_anchor=(1.05, 1.05), loc='upper left',)
 ax.set_box_aspect(1)
 
 fig.subplots_adjust(wspace=.5)
 #fig.savefig('fig6.pdf')
 
-plt.show()
+plt.show(block=0)

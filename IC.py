@@ -13,6 +13,7 @@ flock=100e3
 flow=.5e3#2.5e3
 filter_order=1
 
+paranoise=0.
 
 tauadapt=2
 
@@ -43,7 +44,6 @@ def ICfun(stereo, fs, dt, winshift=2000,_flow=-1):
     if np.mod(winlen,2)==0:
         winlen += 1
 
-    #envelope=np.blackman(winlen)
     envelope=np.blackman(winlen)
     decay = np.exp(-winshift/(fs*tauadapt) )
 
@@ -52,9 +52,8 @@ def ICfun(stereo, fs, dt, winshift=2000,_flow=-1):
     farr=np.arange(1,id_nyquist+1)*fs/winlen
     aMSO,aLSO=np.zeros(id_nyquist),np.zeros(id_nyquist)
     
-    aarr = a_fun(farr*1e-3,dt)
-    #psic = 0.3*2*np.pi#pc_fun(farr*1e-3)
-    psic = pc_fun(farr*1e-3)
+    aarr = a_fun(farr*1e-3,dt)*(1.+paranoise*np.random.randn(len(farr)))
+    psic = pc_fun(farr*1e-3)*(1.+paranoise*np.random.randn(len(farr)))
 
     shortterm_spectrum=[]
     i0=0   
@@ -170,9 +169,31 @@ def Jeffress(stereo,noff,fs,_flow=-1):
         sos=butter(filter_order,_flow/fs*2,output='sos')
         output=sosfiltfilt(sos,output)
  
-    return output/3#*np.sqrt(np.mean(stereo[0]**2)/np.mean(output**2))
+  
+    return output/3
 
+def stspec(out):
+    winshift=2001
+    winlen=winshift*2
+    if np.mod(winlen,2)==0:
+        winlen += 1
+        
+    id_nyquist=int(winlen/2)
+    envelope=np.blackman(winlen)
+    i0=0
+    shortterm_spectrum=[]
+    while i0+winlen<out.shape[0]:
+        i1=i0+winlen    
+        o_local=out[i0:i1]*envelope
+        fo_local=np.fft.fft(o_local)
+    
+        pw=np.abs(fo_local[0:id_nyquist+1])**2
+        
+        shortterm_spectrum.append(pw)
 
+        i0=i0+winshift
+
+    return np.array(shortterm_spectrum)
 
 
 

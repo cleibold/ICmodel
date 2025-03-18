@@ -10,14 +10,14 @@ from scipy.io import wavfile
 
 
 itd_list=np.arange(0,.61,.1)
-colors_itd = plt.cm.coolwarm(np.linspace(0,1,len(itd_list)))
+colors_itd = plt.cm.winter(np.linspace(0,1,len(itd_list)))
 
 fig=plt.figure(figsize=(5.5,6.))
 axs={}
 for n in range(9):
     axs[n+1]=plt.subplot(4,3,n+1)
 
-colr=[pltcol.get_cmap('summer')(f) for f in [0,100, 200]]
+colr=[pltcol.get_cmap('spring').reversed()(f) for f in [60,180, 250]]
 nax=0
 f_flag=0
 for _f in [0.2, 0.4, 0.8]:
@@ -50,24 +50,25 @@ for _f in [0.2, 0.4, 0.8]:
         axs[nax].set_aspect('equal')
         if nax<4:
             axs[nax].set_title('BF = ' + str(1000*_f)+' Hz', fontsize=10)
-        axs[nax].set_yticks([])
-        axs[nax].set_xticks([])
-
+        axs[nax].set_yticks([0])
+        axs[nax].set_xticks([0])
+        axs[nax].grid()
+        
 
 
 axs[8].legend(bbox_to_anchor=(1.0, -.2), frameon=False)
 axs[7].set_xlabel('MSO (a.u.)')
 axs[1].set_ylabel('contra LSO (a.u.)')
-axs[1].text(-5.5,-2,'$\psi_c=0.3 cyc$', rotation=90)
+axs[1].text(-6.5,-2,'$\psi_c=0.3 cyc$', rotation=90)
 axs[4].set_ylabel('contra LSO (a.u.)')
-axs[4].text(-5.5,-2,'$\psi_c=0.7 cyc$', rotation=90)
+axs[4].text(-6.5,-2,'$\psi_c=0.7 cyc$', rotation=90)
 axs[7].set_ylabel('ipsi LSO (a.u.)')
-axs[7].text(-5.5,-2,'$\psi_c=0.7 cyc$', rotation=90)
+axs[7].text(-6.5,-2,'$\psi_c=0.7 cyc$', rotation=90)
 
 plt.subplots_adjust(wspace=.4, hspace=.3)
 
 ax0=fig.add_axes([.1, .22, .25, .015])
-ax0.imshow(itd_list.reshape(1,-1),  extent=[itd_list[0],itd_list[-1],0,1 ], cmap='coolwarm', aspect=.05)
+ax0.imshow(itd_list.reshape(1,-1),  extent=[itd_list[0],itd_list[-1],0,1 ], cmap='winter', aspect=.05)
 ax0.invert_yaxis()
 ax0.set_xlabel('ITD (ms)')
 ax0.set_yticks([])

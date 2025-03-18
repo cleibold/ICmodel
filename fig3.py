@@ -61,13 +61,13 @@ for ITDmax in ITDmax_:
 
     ax=fig.add_axes([left, bottom, width, height])
 
-    axh1=ax.imshow(amat, extent=[itd_range[0],itd_range[-1] , farr[-1], farr[0] ], cmap='PiYG', vmin=-1, vmax=1, aspect=irange/(farr[-1]-farr[0]))
+    axh1=ax.imshow(np.flip(amat,axis=0), extent=[itd_range[0],itd_range[-1] , farr[-1], farr[0] ], cmap='PiYG', vmin=-1, vmax=1, aspect=irange/(farr[-1]-farr[0]),origin='lower')
     ax.invert_yaxis()
+    
     ax.plot(itd_range,pilimit,'-k')
     if nr==2:
         ax.set_xlabel('ITD (ms)')
     ax.set_ylabel('BF (Hz)')
-
     if nr==0:
         ax.set_title('$a_{opt}$', fontsize=10)
     fig.colorbar(axh1, ax=ax, location='right', pad=.05, shrink=0.7)
@@ -75,21 +75,24 @@ for ITDmax in ITDmax_:
 
     
     left=left+width+dw
-    ax=fig.add_axes([left, bottom, width, height])
-
-
-    ax.plot(farr,PCmat[:,0]/2/np.pi, '-', color='blue')
-    ax.text(2000,0, 'Max ITD = '+str(ITDmax)+' ms',rotation=90,fontsize=8)
+    pmean=np.round(100*np.mean(PCmat[:,0]/2/np.pi))/100
+    ax=fig.add_axes([left, bottom+.01, width-.02, height-.02])
+    ax.plot(farr/1000,PCmat[:,0]/2/np.pi, '-', color='blue')
+    ax.text(2,0, 'Max ITD = '+str(ITDmax)+' ms',rotation=90,fontsize=8)
+    ax.text(.15,.85, 'mean $\psi_c$ = '+str(pmean),fontsize=8)
     ax.set_ylim([0,1])
+
     
     if nr==2:
-        ax.set_xlabel('BF (Hz)')
+        ax.set_xlabel('BF (kHz)')
     if nr==0:
         ax.set_title('$\psi_{c}$ (cyc)', fontsize=10)
         
     left=left-(width+dw)
     bottom=bottom-height-dy
     nr += 1
+
+
 #plt.savefig('fig3.pdf')
 
 plt.show(block=1)

@@ -15,13 +15,13 @@ itds=np.arange(0,0.71,0.05)
 aarr=np.arange(-1,1.1,.25)
 colors_a = plt.cm.viridis(np.linspace(0,1,len(aarr)))
 freqarr=[400,800,400,800]
-fig=plt.figure()
+fig=plt.figure(figsize=(8,5))
 width=0.2
 dw=0.1
 height=0.2
 dh=0.15
 bottom=0.7
-left=0.1
+left=0.125
 
 for nf,f in enumerate(freqarr):
     ax=fig.add_axes([left, bottom, width, height])
@@ -32,9 +32,9 @@ for nf,f in enumerate(freqarr):
         
     ax.set_xlabel('ITD (ms)')
     if nf==0:
-        ax.set_ylabel('Rel. rate, '+'$\psi_c=0.7 (cyc)$')
+        ax.set_ylabel('$\psi_c=0.7 (cyc)$\n'+'Rel. rate')
     if nf==2:
-        ax.set_ylabel('Rel. rate, '+'$\psi_c=0.3 (cyc)$')
+        ax.set_ylabel('$\psi_c=0.3 (cyc)$\n'+'Rel. rate')
     if nf<2:
         ax.set_title('BF = ' + str(f) + 'Hz', fontsize=10)
     ax.set_ylim([0, 1.1])

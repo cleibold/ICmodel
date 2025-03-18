@@ -24,7 +24,7 @@ Navg=2001# time average
 
 save_flag=True
 if save_flag==False:
-    with open('f11.pkl','rb') as fd:
+    with open('pkl/f11.pkl','rb') as fd:
         savestruct=pickle.load(fd)
 
 
@@ -152,5 +152,5 @@ plt.show()
 
 
 if save_flag==True:
-    with open('f11.pkl','wb') as fd:
+    with open('pkl/f11.pkl','wb') as fd:
         pickle.dump(savestruct,fd)
