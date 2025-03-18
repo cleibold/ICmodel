@@ -22,6 +22,20 @@ farr=np.arange(1,id_nyquist+1)*fs/winlen/1000
 ncut=62
 Navg=2001# time average
 
+
+fs, mono1 = wavfile.read('sounds/pure400.wav')
+fs, mono2 = wavfile.read('sounds/female1.wav')
+    
+mono1=1.*mono1[0:(96000*2)]
+mono2=1.*mono2[0:(96000*2)]
+target=1
+mono2=mono2/np.sqrt(np.nanmean((mono2)**2))*target
+mono1=mono1/np.sqrt(np.nanmean((mono1)**2))*target
+
+sos=butter(1,500/fs*2,output='sos')
+mono1=sosfiltfilt(sos,mono1)
+mono2=sosfiltfilt(sos,mono2)
+
 save_flag=True
 if save_flag==False:
     with open('pkl/f11.pkl','rb') as fd:
@@ -30,18 +44,6 @@ if save_flag==False:
 
 else:
     savestruct={}
-    fs, mono1 = wavfile.read('sounds/pure400.wav')
-    fs, mono2 = wavfile.read('sounds/female1.wav')
-    
-    mono1=1.*mono1[0:(96000*2)]
-    mono2=1.*mono2[0:(96000*2)]
-    target=1
-    mono2=mono2/np.sqrt(np.nanmean((mono2)**2))*target
-    mono1=mono1/np.sqrt(np.nanmean((mono1)**2))*target
-
-    sos=butter(1,500/fs*2,output='sos')
-    mono1=sosfiltfilt(sos,mono1)
-    mono2=sosfiltfilt(sos,mono2)
 
 
 
