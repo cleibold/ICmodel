@@ -13,7 +13,9 @@ flock=100e3
 flow=.5e3#2.5e3
 filter_order=1
 
+## change this parameter to include Gaussian jitter of optimal parameters (Fig 7C of Manuscript: paranoise=0.2)
 paranoise=0.
+##
 
 tauadapt=2
 
