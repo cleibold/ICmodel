@@ -19,7 +19,7 @@ id_nyquist=int(winlen/2)
 farr=np.arange(1,id_nyquist+1)*fs/winlen/1000
 ncut=41#31*2
     
-save_flag=False
+save_flag=True
 tval=1.
 savestruct={}
 

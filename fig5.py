@@ -56,7 +56,7 @@ Ncells=len(itd_list)
 neuron_sample=np.arange(2,len(itd_list),5)
 oicol=mcmaps['coolwarm'](np.linspace(0, 1, len(itd_list)))
 
-save_flag=False
+save_flag=True
 
 if save_flag==True:
 

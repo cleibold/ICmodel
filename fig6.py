@@ -24,7 +24,7 @@ Ncells=len(itd_list)
 bins0=np.arange(len(itd_list)+1)
 
 pshifts=2**np.arange(3,11)
-save_flag=False
+save_flag=True
 if save_flag==True:
     patterns={}
     iclist={}
