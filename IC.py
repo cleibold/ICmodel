@@ -5,7 +5,8 @@ from importlib import reload
 from scipy.optimize import minimize
 from scipy.optimize import Bounds
 from scipy.optimize import root as findroot
-from scipy.signal import sosfiltfilt, butter
+from scipy.signal import lfilter,lfilter_zi, gammatone, sosfiltfilt, butter
+from copy import copy
 #
 from optpars import psil, psim
 import pickle
@@ -13,9 +14,7 @@ flock=100e3
 flow=.5e3#2.5e3
 filter_order=1
 
-## change this parameter to include Gaussian jitter of optimal parameters (Fig 7C of Manuscript: paranoise=0.2)
 paranoise=0.
-##
 
 tauadapt=2
 
@@ -84,7 +83,7 @@ def ICfun(stereo, fs, dt, winshift=2000,_flow=-1):
         mso_phase[i0:i1] += np.real(np.fft.ifft(fmso))*2
         lso_phase[i0:i1] += np.real(np.fft.ifft(flso))*2
 
-        Icin=np.abs(fIC[0:id_nyquist+1])**2
+        Icin=np.abs(fIC[1:id_nyquist+1])**2
 
         shortterm_spectrum.append(Icin)
         
@@ -103,6 +102,89 @@ def ICfun(stereo, fs, dt, winshift=2000,_flow=-1):
         
  
     return ic, mso_phase, lso_phase, np.array(shortterm_spectrum)*power/power_phase
+
+
+def filterbank(sig,freqs,fs):
+    output=np.zeros((2,len(freqs)))
+
+    sos=butter(1,500/fs*2,output='sos')# membrane filtering
+
+
+    for nz,fz in enumerate(freqs):
+        
+        b, a =gammatone(fz, fs=fs, ftype='fir')
+        zi = lfilter_zi(b, a)
+        zR, _ = lfilter(b, a, sig[0,:], zi=zi*sig[0,0])
+        zL, _ = lfilter(b, a, sig[1,:], zi=zi*sig[1,0])
+        #zR[zR<0]=0
+        #zL[zL<0]=0
+        zR=sosfiltfilt(sos,zR)#**.4)
+        zL=sosfiltfilt(sos,zL)#**.4)
+        
+        output[:,nz]=np.array([np.mean(zR**2),np.mean(zL**2)])
+
+
+    return output
+
+
+def IC_Filterbank_fun(stereo, fs, dt_list, winshift=2000,_flow=-1):
+    global aMSO,aLSO,decay
+    
+    power = np.mean(stereo[0,:]**2)
+    #
+    #
+    
+    #
+
+    winlen=winshift*2
+    if np.mod(winlen,2)==0:
+        winlen += 1
+
+    envelope=np.blackman(winlen)
+    decay = np.exp(-winshift/(fs*tauadapt) )
+
+
+    id_nyquist=int(winlen/2)
+    id_cut=41
+    farr=np.arange(1,id_nyquist+1)*fs/winlen
+    #Filterbank version is not compatible with adaption!
+    aMSO,aLSO=np.zeros(id_cut),np.zeros(id_cut)
+    
+
+    psic = pc_fun(farr*1e-3)*(1.+paranoise*np.random.randn(len(farr)))
+    
+    shortterm_spectrum=[]
+    i0=0
+    st_power=[]
+    while i0+winlen<stereo.shape[1]:
+        i1=i0+winlen
+        print(i0,stereo.shape[1])
+        sig_local=stereo[:,i0:i1]*envelope
+        fsig_local=filterbank(sig_local, farr[:id_cut], fs)
+        
+   
+        #sig_0 for power normalization only
+        fsig_0 = copy(fsig_local)
+        st_power.append(np.sum(fsig_0)/2)
+        #
+        #
+        shortterm_spectrum.append([])
+        for dt in dt_list:
+            aarr = a_fun(farr*1e-3,dt)*(1.+paranoise*np.random.randn(len(farr)))
+            fIC,_,_ = ICcircuit(fsig_local, aarr[:id_cut], psic[:id_cut])
+     
+            Icin=np.abs(fIC)**2
+
+            shortterm_spectrum[-1].append(Icin)
+
+        
+        i0=i0+winshift
+
+        
+    shortterm_spectrum=np.array(shortterm_spectrum)
+    print(shortterm_spectrum.shape)
+    
+    return shortterm_spectrum*power/np.mean(st_power)
 
 
 
@@ -189,7 +271,7 @@ def stspec(out):
         o_local=out[i0:i1]*envelope
         fo_local=np.fft.fft(o_local)
     
-        pw=np.abs(fo_local[0:id_nyquist+1])**2
+        pw=np.abs(fo_local[1:id_nyquist+1])**2
         
         shortterm_spectrum.append(pw)
 

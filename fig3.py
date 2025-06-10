@@ -12,6 +12,7 @@ import pickle
 
 ITDmax_=np.array([0.7, 0.3, 0.15])
 a_fun, pc_fun = {}, {}
+acap=1.5
 
 left=0.15
 bottom=0.7
@@ -61,7 +62,7 @@ for ITDmax in ITDmax_:
 
     ax=fig.add_axes([left, bottom, width, height])
 
-    axh1=ax.imshow(np.flip(amat,axis=0), extent=[itd_range[0],itd_range[-1] , farr[-1], farr[0] ], cmap='PiYG', vmin=-1, vmax=1, aspect=irange/(farr[-1]-farr[0]),origin='lower')
+    axh1=ax.imshow(np.flip(amat,axis=0), extent=[itd_range[0],itd_range[-1] , farr[-1], farr[0] ], cmap='PiYG', vmin=-acap, vmax=acap, aspect=irange/(farr[-1]-farr[0]),origin='lower')
     ax.invert_yaxis()
     
     ax.plot(itd_range,pilimit,'-k')
@@ -74,6 +75,19 @@ for ITDmax in ITDmax_:
 
 
     
+    left=left+width+dw
+    ax=fig.add_axes([left, bottom+.01, width-.02, height-.02])
+    for mf in range(amat.shape[0]-1,0,-1):
+        ax.plot(itd_range*farr[mf]/1000, amat[mf,:], color=np.array([1,1,1])*mf/40)
+
+    ax.set_ylim([-10,10])
+    ax.set_xlim([0,1])
+    if nr==2:
+        ax.set_xlabel('IPD (cyc)')
+    if nr==0:
+        ax.set_title('$a_{opt}$', fontsize=10)
+
+        
     left=left+width+dw
     pmean=np.round(100*np.mean(PCmat[:,0]/2/np.pi))/100
     ax=fig.add_axes([left, bottom+.01, width-.02, height-.02])
@@ -88,7 +102,7 @@ for ITDmax in ITDmax_:
     if nr==0:
         ax.set_title('$\psi_{c}$ (cyc)', fontsize=10)
         
-    left=left-(width+dw)
+    left=left-(width+dw)*2
     bottom=bottom-height-dy
     nr += 1
 

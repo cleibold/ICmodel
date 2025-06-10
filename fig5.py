@@ -23,7 +23,7 @@ farr=np.arange(1,id_nyquist+1)*fs/winlen/1000
 
 ITDmax=.3
 itd_list=np.arange(0,ITDmax,.01)
-itd_test=np.arange(-2.5,2.5+.05,.05)
+itd_test=np.arange(-3,3.5+.05,.05)
 i0=np.argmin(np.abs(itd_test))
  
 
@@ -53,10 +53,10 @@ for bf in bfstr:
 Ncells=len(itd_list)
 
 
-neuron_sample=np.arange(2,len(itd_list),5)
+neuron_sample=np.arange(3,len(itd_list)-3,5)
 oicol=mcmaps['coolwarm'](np.linspace(0, 1, len(itd_list)))
 
-save_flag=True
+save_flag=False
 
 if save_flag==True:
 
@@ -119,7 +119,7 @@ npanel=1
 for bf in ['200', '300', '800']:
     ax=fig.add_subplot(2,3,npanel)
     maxrate=np.max(sample_rates[bf][:,neuron_sample,nchan[bf]])
-    minrate=np.min(sample_rates[bf][30,neuron_sample,nchan[bf]])
+    minrate=np.mean(sample_rates[bf][50:57,:,nchan[bf]])/1.5#0#np.min(sample_rates[bf][30,neuron_sample,nchan[bf]])
     for nid in neuron_sample:
         ax.plot(itd_test,
                 (sample_rates[bf][:,nid,nchan[bf]]-minrate)/(maxrate-minrate),
@@ -128,10 +128,11 @@ for bf in ['200', '300', '800']:
     
     ax.set_title('BF = '+bf+' Hz', fontsize=10)
     ax.set_xlabel('ITD (ms)')
-    ax.set_xlim([-1,1])
+    ax.set_xlim([-2.,2.])
     ax.set_ylim([0,1.1])
     if npanel==1:
         ax.legend(frameon=False)
+        ax.set_ylabel('Norm Rate (a.u.)')
     npanel=npanel+1
     
 
@@ -144,26 +145,33 @@ idend=101
 hi={}
 for bf in bfstr:
     freq=1.*int(bf)/1000
-    bi=bestITDs(sample_rates[bf][:,:,nchan[bf]],1./freq)
-    [hi[bf],b]=np.histogram(bi,np.arange(-.5,1.6,.2))
+    maxrate=np.max(sample_rates[bf][:,neuron_sample,nchan[bf]])
+    minrate=np.mean(sample_rates[bf][50:57,neuron_sample,nchan[bf]])/1.5
+    nltun=(sample_rates[bf][:,:,nchan[bf]]-minrate)/(maxrate-minrate)
+    bi=bestITDs(nltun,1./freq)*freq
+    [hi[bf],b]=np.histogram(bi,np.arange(-.2,.5,.06))
     
 bm = (b[:-1]+b[1:])/2
 db=b[1]-b[0]
 
 ncol=0
 for bf in bfstr:
-    ax.plot(bm,hi[bf]/np.sum(hi[bf])/db, label=bf+' Hz', color=colr[ncol])
+    #freq=1.*int(bf)/1000
+    ax.plot(bm*freq,hi[bf]/np.sum(hi[bf]), label=bf+' Hz', color=colr[ncol])
     ncol +=1
 
 ax.legend(frameon=False)
-ax.set_xlabel('Best ITD (ms)')
-ax.set_ylabel('PDF')
+ax.set_xlabel('Best IPD (cyc)')
+ax.set_xlim([-.2,.4])
+ax.set_ylabel('Normalized count')
 
 ax=fig.add_subplot(2,2,4)
-ma=[];su=[];sl=[];fa=[]
+ma=[];su=[];sl=[];fa=[];med=[]
 for bf in bfstr:
     cdf=np.cumsum(hi[bf])/np.sum(hi[bf])
     m=np.sum(bm*hi[bf])/np.sum(hi[bf])
+    med.append(bm[np.min(np.where(cdf>.5)[0])])
+
     sui=bm[np.min(np.where(cdf>.9)[0])]
     sli=bm[np.max(np.where(cdf<.1)[0])]
     fa.append(1.*int(bf))
@@ -179,10 +187,12 @@ fa=np.array(fa)
 ax.plot(fa,sl, 'k--')
 ax.plot(fa,ma, 'k')
 ax.plot(fa,su, 'k--')
-ax.plot(np.arange(200,800,2),1000/8/np.arange(200,800,2), color='grey')
+ax.plot(fa,np.array(med), 'k.')
+#ax.plot(np.arange(200,800,2),1000/8/np.arange(200,800,2), color='grey')
+ax.plot(np.arange(200,800,2),1/8*np.ones_like(np.arange(200,800,2)), color='grey')
 ax.set_xlim([100,900])
 ax.set_xlabel('Best frequency (Hz)')
-ax.set_ylabel('Best ITD (ms)')
+ax.set_ylabel('Best IPD (cyc)')
 fig.subplots_adjust(wspace=.45, hspace=.5)
 #fig.savefig('fig5.pdf')
 plt.show(block=0)

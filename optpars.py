@@ -21,7 +21,7 @@ psiCOM=np.arange(0.,1.01,.0125)*2*np.pi
 psim=np.mod(psim+np.pi,2*np.pi)-np.pi
 psiCOM=np.mod(psiCOM+np.pi,2*np.pi)-np.pi
 #
-savflag=False
+savflag=True
 
 
 def projection(a,psim,psil,psiCOM,dphi):
@@ -99,7 +99,7 @@ def renorm(target,source):
     return target*scale
 
 
-lambda_neg=.5
+lambda_neg=1.
 def optpsipars(freq):
 
     phi_range=itd_range*freq*2*np.pi

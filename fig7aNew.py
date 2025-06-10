@@ -9,6 +9,7 @@ from scipy.signal import find_peaks
 #
 import IC
 reload(IC)
+IC.paranoise=.2
 #
 from scipy.io import wavfile
 from scipy.signal import sosfiltfilt, butter
@@ -22,21 +23,9 @@ ncut=41#31*2
 save_flag=True
 tval=.05
 savestruct={}
-
 fs, mono1 = wavfile.read('sounds/pure400.wav')
 fs, mono2 = wavfile.read('sounds/noise.wav')
 
-mono1=1.*mono1[0:int(1*fs)]
-mono2=1.*mono2[0:int(1*fs)]
-
-
-Jlat=20.
-
-
-#b, a =gammatone(400, fs=fs, ftype='fir')
-#zi = lfilter_zi(b, a)
-#z1, _ = lfilter(b, a, mono1, zi=zi*mono1[0])
-#z2, _ = lfilter(b, a, mono2, zi=zi*mono2[0])
 sos=butter(2,np.array([300,500])/fs*2,output='sos', btype='bandpass')# membrane filtering
 mono1n=sosfiltfilt(sos,mono1)
 mono2n=sosfiltfilt(sos,mono2)
@@ -54,17 +43,14 @@ nrm=np.sqrt(np.nanmean(mono1**2))
 mono1=mono1/nrm
 mono2=mono2*rms1/rms2/nrm
    
+ 
 
-
-       
 
         
  
 #
-itd_noise=[0.,0.4]
-itd_sig=[.4,0]
-
-db_sig=np.array([0,-5,-10,-15,-200])
+itd_sig=[1.,-1.]
+db_sig=np.array([0,-10,-20,-25,-200])
 level_sig=10**(db_sig/20)
 
 ITDmax=.7
@@ -79,11 +65,11 @@ if save_flag==True:
     
     for nl,level in enumerate(level_sig):
         leveldb=db_sig[nl]
-        for ndt,dtn in enumerate(itd_noise):
-            key_str=str(nl)+' '+str(ndt)
+        for mdt,dts in enumerate(itd_sig):
+            key_str=str(nl)+' '+str(mdt)
             print(key_str)
             
-            stereo=itdtools.make_mixture([level*mono1, mono2], -1*np.array([itd_sig[ndt], dtn])*1e-3, fs)
+            stereo=np.array([level*mono1+mono2,dts*level*mono1+mono2])
             
             patterns=[]
             jpatterns=[]
@@ -101,10 +87,10 @@ if save_flag==True:
             savestruct[key_str]={'jpatterns':jpatterns,   
                                  'patterns':patterns}
 
-    with open('pkl/ff4itd.pkl','wb') as fd:
+    with open('pkl/ff4noise.pkl','wb') as fd:
         pickle.dump(savestruct,fd)
 else:
-    with open('pkl/ff4itd.pkl','rb') as fd:
+    with open('pkl/ff4noise.pkl','rb') as fd:
         savestruct=pickle.load(fd)
 
 
@@ -112,25 +98,29 @@ def addinhibition(patterns):
     patt=np.mean(np.array(patterns),axis=1)
     patt=patt/np.max(patt)
     lateralinhibition=np.ones((patt.shape[0],1))@np.mean(patt,axis=0).reshape(1,-1)
-    lpatt=patt/(1+Jlat*lateralinhibition)
+    lpatt=patt/(1+20*lateralinhibition)
 
     return lpatt, patt
 
+
 def dissim(x,y):
 
-    return np.nanmax((x-y)/y,axis=0)
+    return np.nanmax((x-y)/y,axis=0)#/np.mean(y,axis=0)
     #return np.diff(np.max(x,axis=0)/np.max(y))
-   
-
     
+noise=savestruct['4 0']['patterns']
+jnoise=savestruct['4 0']['jpatterns']
+noise, nnoise=addinhibition(noise)
+jnoise, njnoise=addinhibition(jnoise)
+
 
 fig=plt.figure(figsize=(10,6))
 figNo=plt.figure(figsize=(10,6))
 nplt=1
 for nl,level in enumerate(level_sig[:-1]):
     leveldb=db_sig[nl]
-    for ndt,dts in enumerate(itd_noise):
-        key_str=str(nl)+' '+str(ndt)
+    for mdt,dts in enumerate(itd_sig):
+        key_str=str(nl)+' '+str(mdt)
  
 
           
@@ -152,8 +142,8 @@ for nl,level in enumerate(level_sig[:-1]):
         axNo.invert_yaxis()
         ax.set_xticks([0, 0.3, .6])
         axNo.set_xticks([0, 0.3, .6])
-        ax.set_yticks([0.4,.8])
-        axNo.set_yticks([0.4,.8])
+        ax.set_yticks([0.5,1.0])
+        axNo.set_yticks([0.5,1.0])
 
         if nplt==1:
             ax.text(-.75,0.5,str(leveldb), rotation=90)
@@ -179,29 +169,26 @@ for nl,level in enumerate(level_sig[:-1]):
         ax=fig.add_subplot(4,4,nplt+1)
         axNo=figNo.add_subplot(4,4,nplt+1)
         #
-        noise=savestruct['4 '+str(ndt)]['patterns']
-        jnoise=savestruct['4 '+str(ndt)]['jpatterns']
-        noise, nnoise=addinhibition(noise)
-        jnoise, njnoise=addinhibition(jnoise)
-
-
         snr=dissim(patt[:,:ncut],noise[:,:ncut])
         jsnr=dissim(jpatt[:,:ncut],jnoise[:,:ncut])
         n_snr=dissim(npatt[:,:ncut],nnoise[:,:ncut])
         n_jsnr=dissim(njpatt[:,:ncut],njnoise[:,:ncut])
 
-        
-        ax.plot(farr[0:ncut], (jsnr), '-', color='grey', label='Delay')
+        #ax.plot(farr[0:ncut], (jsnr), '-', color='grey', label='Delay')
         pks,th=find_peaks(snr, prominence=tval)
         print(th)
         ax.plot(farr[0:ncut], (snr), '--k', label='IC')
         ax.plot(farr[pks], snr[pks], '.r')
 
-        axNo.plot(farr[0:ncut], (n_jsnr), '-', color='grey',label='Delay')
+        #axNo.plot(farr[0:ncut], (n_jsnr), '-', color='grey',label='Delay')
         pks,th=find_peaks(n_snr, prominence=tval)
         print(th)
         axNo.plot(farr[0:ncut], (n_snr), '--k', label='IC')
         axNo.plot(farr[pks], n_snr[pks], '.r')
+
+
+
+
 
         #
         #
@@ -209,20 +196,20 @@ for nl,level in enumerate(level_sig[:-1]):
         #
         #ax.set_xlim([-.05, ITDmax])
         ax.set_xlim([0,1])
-        ax.set_xticks([0, 0.4, .8])
-        ax.set_ylim([-.5,2.5])       
+        ax.set_xticks([0, 0.5, 1])
+        ax.set_ylim([-1.5,4])       
         axNo.set_xlim([0,1])
-        axNo.set_xticks([0, 0.4, .8])
-        axNo.set_ylim([-1.5,1.5])       
+        axNo.set_xticks([0, 0.5, 1])
+        axNo.set_ylim([-1.5,8.])       
 
         if nplt==1:
-            ax.set_title('S$_{0.4}$N$_0$')
-            axNo.set_title('S$_{0.4}$N$_0$')
+            ax.set_title('S$_0$N$_0$')
+            axNo.set_title('S$_0$N$_0$')
             ax.legend(frameon=False)
             axNo.legend(frameon=False)
         if nplt==3:
-            ax.set_title('S$_{0}$N$_{0.4}$')
-            axNo.set_title('S$_{0}$N$_{0.4}$')
+            ax.set_title('S$_{\pi}$N$_0$')
+            axNo.set_title('S$_{\pi}$N$_0$')
         if nplt>12:
             ax.set_xlabel('BF (kHz)')
             axNo.set_xlabel('BF (kHz)')
@@ -238,7 +225,7 @@ for nl,level in enumerate(level_sig[:-1]):
         
 fig.subplots_adjust(wspace=.45, hspace=.5)
 figNo.subplots_adjust(wspace=.45, hspace=.5)
-#fig.savefig('fig10.pdf')
+#fig.savefig('fig7anew.pdf')
 plt.show(block=0)
 
 
